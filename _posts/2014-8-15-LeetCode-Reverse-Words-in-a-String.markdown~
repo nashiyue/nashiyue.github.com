@@ -5,7 +5,7 @@ date:   2014-8-15 19:13:17
 categories: leetcode
 ---
 
-{% highlight java %}
+{% highlight ruby %}
 package com.lw.leet1;
 
 import java.util.Stack;

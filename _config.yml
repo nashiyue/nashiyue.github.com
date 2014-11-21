@@ -11,3 +11,7 @@ github_username:  nashiyue
 # Build settings
 markdown: kramdown
 excerpt_separator: ""
+
+paginate: 5
+paginate_path: "page:num"
+
