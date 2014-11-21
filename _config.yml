@@ -10,3 +10,4 @@ github_username:  nashiyue
 
 # Build settings
 markdown: kramdown
+excerpt_separator: ""
