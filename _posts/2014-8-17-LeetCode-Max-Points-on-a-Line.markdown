@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Max Points on a Line["
+title:  "Max Points on a Line"
 date:   2014-8-17 19:13:17
 categories: leetcode
 ---
