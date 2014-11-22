@@ -3,7 +3,7 @@ title: 一叶的一页
 email: nashiyue1314@163.com
 description:  # this means to ignore newlines until "baseurl:"
     很高兴能和大家在这里一起分享技术，一起成长，希望大家多多支持，共同进步！
-baseurl: "" # the subpath of your site, e.g. /blog/
+baseurl: "/" # the subpath of your site, e.g. /blog/
 url: "http://nashiyue.github.io" # the base hostname & protocol for your site
 twitter_username: nashiyue
 github_username:  nashiyue
