@@ -1,0 +1,176 @@
+---
+layout: post
+title:  "网易体育新闻数据爬取"
+date:   2014-12-11 15:54:17
+categories: spider
+---
+
+{% highlight java %}
+package com.lw.sports163;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+public class NetSpider163 {
+	
+	public static String STORE_DIR_PATH = "/home/liuwei/Downloads/spider163/";
+	public static int MULTI_LIMIT = 10;
+	
+	private Queue<String> targetUrlQueue;
+	private HashSet<String> finishUrlSet;
+	
+	private int maxUrls;
+	private int visitNum;
+	
+	public NetSpider163(String baseUrl,int maxUrls){
+		this.maxUrls = maxUrls;
+		targetUrlQueue = new LinkedList<String>();
+		finishUrlSet = new HashSet<String>();
+		targetUrlQueue.add(baseUrl);
+	}
+	
+	public void addUrls(String url){
+		targetUrlQueue.add(url);
+	}
+	
+	private boolean isWrite(String url){
+		
+		String base = "http://sports.163.com/";
+		if( -1 != url.indexOf(base)){
+			Pattern pattern = Pattern.compile("[0-3]{2}/[0-9]{4}/[0-9]{2}/.*html");
+			Matcher matcher = pattern.matcher(url.substring(base.length()));
+			return matcher.matches();
+		}
+		return false;
+	}
+	
+	private boolean isRelevant(String url){
+		
+		String base = "sports.163.com/";
+		if( -1 != url.indexOf(base)){
+			return true;
+		}
+		return false;
+	}
+	
+	private void downloadPage(String url,String content){
+		System.out.println("["+(++ visitNum)+"] :"+url +" Target:"+targetUrlQueue.size()+" Finish:"+finishUrlSet.size());
+        
+		String base = "http://sports.163.com/";
+		String name = url.substring(base.length()).replace('/', '-');
+		try {
+			FileOutputStream out = new FileOutputStream(STORE_DIR_PATH+name);
+			out.write(content.getBytes());
+			out.flush();
+			out.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void downloadPage(String url,String title,String content,String comments){
+		downloadPage(url,title+"\n"+content+"\n"+comments);
+	}
+	
+	
+	public void begin() {
+		Document doc = null;
+		
+		while(!targetUrlQueue.isEmpty() && visitNum < maxUrls){
+			String url = targetUrlQueue.poll();
+		    //如果之前没有访问过这个URL
+			if(!finishUrlSet.contains(url)){
+				try{
+				   doc = Jsoup.connect(url).get();
+				}
+				catch(IOException e){
+//					e.printStackTrace();
+				}
+				if(doc != null){
+					// 取出链接加入到队列中
+					Elements links = doc.select("a[href]");
+			        for (Element link : links) {
+			        	String nextUrl = link.attr("abs:href");
+
+			        	if(!finishUrlSet.contains(nextUrl)){
+			        		if(targetUrlQueue.size() < (maxUrls/MULTI_LIMIT)){
+				        		if(isRelevant(nextUrl)){
+				        			targetUrlQueue.add(nextUrl);
+				        		}
+				        	}
+				        	else if(targetUrlQueue.size() < maxUrls*MULTI_LIMIT){
+				        		if(isWrite(nextUrl)){
+				        			targetUrlQueue.add(nextUrl);
+				        		}
+				        	}
+				        	else{
+				        		break;
+				        	}
+			        	}// end is finish
+			        }
+					//满足条件的话，进行处理
+					if(isWrite(url)){
+						String comments = null;
+						Elements elements = doc.getElementsByTag("script");
+						for(Element element : elements){
+							String line = element.toString();
+							int flag = line.indexOf("totalCount =");
+							if(-1 != flag){
+								line = line.substring(flag);
+								flag = line.indexOf(",");
+								if(flag != -1){
+									comments = line.substring("totalCount =".length(),flag);
+									break;
+								}//end if flag ,
+							}//end if flag totalCount =
+						}
+						if(comments != null){
+							Element element = doc.getElementById("endText");
+							if(element == null){
+								downloadPage(url, doc.title(),"",comments);
+							}
+							else{
+								downloadPage(url, doc.title(),element.text(),comments);
+							}
+						}
+						
+					}
+					//将这个链接置为已访问的
+			        finishUrlSet.add(url);
+				}//end if doc != null
+			}//end if  finishUrlSet
+		}//end while
+	}//end begin
+	
+	public static void main(String[] args){
+		String baseUrl = "http://sports.163.com";
+		NetSpider163 spider = new NetSpider163(baseUrl, 30000);
+		spider.addUrls("http://sports.163.com/11/1225/17/7M4RQCII00051CAQ.html");
+		spider.addUrls("http://sports.163.com/09/1103/12/5N6OEBT800051C89.html");
+		spider.addUrls("http://sports.163.com/12/1114/10/8G91D8LJ000505HF.html");
+		spider.begin();
+		
+	}
+}
+{% endhighlight %}
+
+
+<font color="red"><b>备注:</b></font>
+<font color="red">这里使用到Jsoup的外部jar包,下载和使用说明如下：</font>
+<ul>
+  <li><a href="http://jsoup.org/download">Jsoup外部jar包下载</a></li>
+  <li><a href="http://www.open-open.com/jsoup/">Jsoup开发指南中文版</a></li>
+</ul>
